@@ -52,6 +52,7 @@ option(LLAMA_SANITIZE_ADDRESS       "llama: enable address sanitizer"           
 option(LLAMA_SANITIZE_UNDEFINED     "llama: enable undefined sanitizer"                     OFF)
 
 # instruction set specific
+option(LLAMA_CUDA                   "llama: enable CUDA"                                    ON)
 option(LLAMA_AVX                    "llama: enable AVX"                                     ON)
 option(LLAMA_AVX2                   "llama: enable AVX2"                                    ON)
 option(LLAMA_AVX512                 "llama: enable AVX512"                                  OFF)
@@ -67,6 +68,12 @@ option(LLAMA_BUILD_EXAMPLES         "llama: build examples" ${LLAMA_STANDALONE})
 #
 # Compile flags
 #
+
+if(LLAMA_CUDA)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_ARCHITECTURES all-major)
+    set(CMAKE_CUDA_STANDARD 11)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -195,11 +202,11 @@ elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(x86_64|i686|AMD64)$")
     message(STATUS "x86 detected")
     if (MSVC)
         if (LLAMA_AVX512)
-            add_compile_options(/arch:AVX512)
+            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/arch:AVX512>)
         elseif (LLAMA_AVX2)
-            add_compile_options(/arch:AVX2)
+            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/arch:AVX2>)
         elseif (LLAMA_AVX)
-            add_compile_options(/arch:AVX)
+            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/arch:AVX>)
         endif()
     else()
         add_compile_options(-mf16c)
@@ -228,9 +235,15 @@ endif()
 # Build libraries
 #
 
-add_library(ggml OBJECT
-            ggml.c
-            ggml.h)
+set(GGML_SOURCES 
+    ggml.c
+    ggml.h
+)
+if(LLAMA_CUDA)
+    list(APPEND GGML_SOURCES ggml.cu)
+endif()
+
+add_library(ggml STATIC ${GGML_SOURCES})
 
 target_include_directories(ggml PUBLIC .)
 target_compile_features(ggml PUBLIC c_std_11) # don't bump
