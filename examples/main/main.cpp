@@ -152,13 +152,13 @@ int main(int argc, char ** argv) {
     }
 
     // prefix & suffix for instruct mode
-    const auto inp_pfx = ::llama_tokenize(ctx, "\n\n### Instruction:\n\n", true);
-    const auto inp_sfx = ::llama_tokenize(ctx, "\n\n### Response:\n\n", false);
+    const auto inp_pfx = ::llama_tokenize(ctx, "\n### Human:", true);
+    const auto inp_sfx = ::llama_tokenize(ctx, "\n### Assistant:", false);
 
     // in instruct mode, we inject a prefix and a suffix to each input by the user
     if (params.instruct) {
         params.interactive_start = true;
-        params.antiprompt.push_back("### Instruction:\n\n");
+        params.antiprompt.push_back("### Human:");
     }
 
     // enable interactive mode if reverse prompt or interactive start is specified

@@ -1,0 +1,1 @@
+"./build/bin/Release/main.exe" -m "./models/vicuna/ggml-vicuna-13b-4bit.bin" -f "./prompts/vicuna_simple.txt" --color -ins --n_parts 1 --ctx_size 2048 --n_predict -1
