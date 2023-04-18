@@ -9,6 +9,7 @@ Inference of [LLaMA](https://arxiv.org/abs/2302.13971) model in pure C/C++
 
 **Hot topics:**
 
+- [Added LoRA support](https://github.com/ggerganov/llama.cpp/pull/820)
 - [Add GPU support to ggml](https://github.com/ggerganov/llama.cpp/discussions/915)
 - [Roadmap Apr 2023](https://github.com/ggerganov/llama.cpp/discussions/784)
 
@@ -50,6 +51,7 @@ New features will probably be added mostly through community contributions.
 - Python: [abetlen/llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
 - Go: [go-skynet/go-llama.cpp](https://github.com/go-skynet/go-llama.cpp)
 - Node.js: [hlhr202/llama-node](https://github.com/hlhr202/llama-node)
+- Ruby: [yoshoku/llama_cpp.rb](https://github.com/yoshoku/llama_cpp.rb)
 
 **UI:**
 

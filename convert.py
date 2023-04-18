@@ -18,10 +18,12 @@ import zipfile
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import (IO, TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
+                    Literal, Optional, Sequence, Tuple, TypeVar, Union)
+
 import numpy as np
 from sentencepiece import SentencePieceProcessor  # type: ignore
-from typing import (IO, Any, Callable, Iterable, Literal, Optional, Sequence,
-                    TypeVar, Union, List, Dict, Tuple, TYPE_CHECKING)
+
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
@@ -684,7 +686,7 @@ class LazyUnpickler(pickle.Unpickler):
         description = f'storage data_type={data_type} path-in-zip={filename} path={self.zip_file.filename}'
         return LazyStorage(load=load, kind=pid[1], description=description)
 
-    def lazy_rebuild_tensor_v2(storage: Any, storage_offset: Any, size: Any, stride: Any, # pyright: ignore[reportSelfClsParameterName]
+    def lazy_rebuild_tensor_v2(storage: Any, storage_offset: Any, size: Any, stride: Any,  # pyright: ignore[reportSelfClsParameterName]
                                requires_grad: Any, backward_hooks: Any, metadata: Any = None) -> LazyTensor:
         assert isinstance(storage, LazyStorage)
 
@@ -733,7 +735,7 @@ def lazy_load_safetensors_file(fp: IO[bytes], path: Path) -> ModelPlus:
     header: Dict[str, Dict[str, Any]] = json.loads(fp.read(header_size))
     # Use mmap for the actual data to avoid race conditions with the file offset.
     mapped = memoryview(mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ))
-    byte_buf = mapped[fp.tell():]
+    byte_buf = mapped[8 + header_size:]
 
     def convert(info: Dict[str, Any]) -> LazyTensor:
         data_type = SAFETENSORS_DATA_TYPES[info['dtype']]
@@ -759,7 +761,7 @@ def must_read(fp: IO[bytes], length: int) -> bytes:
     return ret
 
 
-def lazy_load_ggml_file(fp: IO[bytes], path: Path) -> ModelPlus:
+def lazy_load_ggml_file(fp: io.BufferedReader, path: Path) -> ModelPlus:
     magic = must_read(fp, 4)[::-1]
     if magic in (b'ggmf', b'ggjt'):
         version, = struct.unpack("i", must_read(fp, 4))
@@ -793,7 +795,9 @@ def lazy_load_ggml_file(fp: IO[bytes], path: Path) -> ModelPlus:
 
     model: LazyModel = {}
     # Use mmap for the actual data to avoid race conditions with the file offset.
+    off = fp.raw.tell()
     mapped = memoryview(mmap.mmap(fp.fileno(), 0, access=mmap.ACCESS_READ))
+    fp.raw.seek(off) # needed on Windows
 
     def read_tensor() -> None:  # this is a function so that variables captured in `load` don't change
         shape_len, name_len, ftype = struct.unpack("iii", must_read(fp, 12))
@@ -947,8 +951,9 @@ class OutputFile:
 
         ndarrays = bounded_parallel_map(do_item, model.items(), concurrency=8)
         for i, ((name, lazy_tensor), ndarray) in enumerate(zip(model.items(), ndarrays)):
-            size = ' x '.join(map(str, lazy_tensor.shape))
-            print(f"[{i+1}/{len(model)}] Writing tensor {name}, size {size}...")
+            size = ' x '.join(f"{dim:6d}" for dim in lazy_tensor.shape)
+            padi = len(str(len(model)))
+            print(f"[{i+1:{padi}d}/{len(model)}] Writing tensor {name:38s} | size {size:16} | type {lazy_tensor.data_type}")
             of.write_tensor_header(name, lazy_tensor.shape, lazy_tensor.data_type)
             ndarray.tofile(of.fout)
         of.fout.close()
@@ -1080,6 +1085,7 @@ def default_outfile(model_paths: List[Path], params: Params) -> Path:
     namestr = {
         GGMLFileType.AllF32: "f32",
         GGMLFileType.MostlyF16: "f16",
+        GGMLFileType.MostlyQ4_0: "q4_0",
         GGMLFileType.MostlyQ4_1: "q4_1",
         GGMLFileType.PerLayerIsQ4_1: "q4_1",
     }[params.file_type]
@@ -1103,7 +1109,7 @@ def main(args_in: Optional[List[str]] = None) -> None:
     parser.add_argument("--dump", action="store_true", help="don't convert, just show what's in the model")
     parser.add_argument("--dump-single", action="store_true", help="don't convert, just show what's in a single model file")
     parser.add_argument("--vocab-only", action="store_true", help="extract only the vocab")
-    parser.add_argument("--outtype", choices=["f32", "f16", "q4_1"], help="output format (default: based on input)")
+    parser.add_argument("--outtype", choices=["f32", "f16", "q4_1", "q4_0"], help="output format (default: based on input)")
     parser.add_argument("--vocab-dir", type=Path, help="directory containing tokenizer.model, if separate from model file")
     parser.add_argument("--outfile", type=Path, help="path to write to; default: based on input")
     parser.add_argument("model", type=Path, help="directory containing model file, or model file itself (*.pth, *.pt, *.bin)")

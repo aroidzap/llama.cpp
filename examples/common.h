@@ -43,6 +43,9 @@ struct gpt_params {
 
     bool rm_trailing_space_workaround = false; // workaround for removing trailing space from reverse/stop prompts
 
+    std::string lora_adapter = "";  // lora adapter path
+    std::string lora_base = "";     // base model path for the lora adapter
+
     bool memory_f16        = true;  // use f16 instead of f32 for memory kv
     bool random_prompt     = false; // do not randomize prompt if none provided
     bool use_color         = false; // use color to distinguish generations and inputs

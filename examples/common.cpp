@@ -210,6 +210,19 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
                 break;
             }
             params.model = args[i];
+        } else if (arg == "--lora") {
+            if (++i >= args_c) {
+                invalid_param = true;
+                break;
+            }
+            params.lora_adapter = args[i];
+            params.use_mmap = false;
+        } else if (arg == "--lora-base") {
+            if (++i >= args_c) {
+                invalid_param = true;
+                break;
+            }
+            params.lora_base = args[i];
         } else if (arg == "-i" || arg == "--interactive") {
             params.interactive = true;
         } else if (arg == "--embedding") {
@@ -362,6 +375,8 @@ void gpt_print_usage(char * argv_0, const gpt_params & params) {
     }
     fprintf(stderr, "  --mtest               compute maximum memory usage\n");
     fprintf(stderr, "  --verbose-prompt      print prompt before generation\n");
+    fprintf(stderr, "  --lora FNAME          apply LoRA adapter (implies --no-mmap)\n");
+    fprintf(stderr, "  --lora-base FNAME     optional model to use as a base for the layers modified by the LoRA adapter\n");
     fprintf(stderr, "  -m FNAME, --model FNAME\n");
     fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
     fprintf(stderr, "\n");
