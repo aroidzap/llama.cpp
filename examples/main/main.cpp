@@ -25,6 +25,7 @@
 #endif
 
 static console_state con_st;
+static llama_context ** g_ctx;
 
 static bool is_interacting = false;
 
@@ -37,6 +38,7 @@ void sigint_handler(int signo) {
         if (!is_interacting) {
             is_interacting=true;
         } else {
+            llama_print_timings(*g_ctx);
             _exit(130);
         }
     }
@@ -97,6 +99,7 @@ int main(int argc, char ** argv) {
 //bool is_prime(int n) {)";
 
     llama_context * ctx;
+    g_ctx = &ctx;
 
     // load the model
     {
@@ -181,7 +184,7 @@ int main(int argc, char ** argv) {
     const auto inp_sfx = ::llama_tokenize(ctx, instruct_suffix, params.instruct_suffix_bos);
 
     // enable interactive mode if reverse prompt or interactive start is specified
-    if (params.antiprompt.size() != 0 || params.stopprompt.size() != 0 || params.interactive_start) {
+    if (params.antiprompt.size() != 0 || params.stopprompt.size() != 0 || params.interactive_first) {
         params.interactive = true;
     }
 
@@ -266,7 +269,7 @@ int main(int argc, char ** argv) {
             fprintf(stderr, " - Press Return to return control to LLaMa.\n"
                             " - If you want to submit another line, end your input in '\\'.\n\n");
         }
-        is_interacting = params.interactive_start;
+        is_interacting = params.interactive_first;
     }
 
     struct Antiprompt {

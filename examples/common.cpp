@@ -229,10 +229,8 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
             params.embedding = true;
         } else if (arg == "--clean-interface") {
             params.clean_interface = true;
-        } else if (arg == "--interactive-start") {
-            params.interactive = true;
         } else if (arg == "--interactive-first") {
-            params.interactive_start = true;
+            params.interactive_first = true;
         } else if (arg == "-ins" || arg == "--instruct") {
             fprintf(stderr, "\n\nWarning: instruct mode is deprecated! Use: \n"
                 "--clean-interface "
@@ -245,7 +243,7 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
             "\n\n");
             // params.instruct = true;
             params.clean_interface = true;
-            params.interactive_start = true;
+            params.interactive_first = true;
             params.n_keep = -1;
             params.instruct_prefix_bos = true;
             params.instruct_prefix = "\n\n### Instruction:\n\n";
