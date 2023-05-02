@@ -28,10 +28,11 @@ models/*
 /result
 /perplexity
 /embedding
-/benchmark-q4_0-matmult
+/benchmark-matmult
 /vdot
 /Pipfile
 
+build-info.h
 arm_neon.h
 compile_commands.json
 
